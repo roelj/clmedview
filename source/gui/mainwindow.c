@@ -21,7 +21,7 @@
 #include "libviewer.h"
 #include "libpixeldata-plugin.h"
 #include "libconfiguration.h"
-//#include "libhistogram.h"
+#include "libhistogram.h"
 
 #include "libcommon-list.h"
 #include "libcommon-history.h"
@@ -198,7 +198,7 @@ GtkWidget *properties_opacity_scale;
 GtkWidget *properties_lookup_table_combo;
 GtkWidget *timeline;
 GtkWidget *treeview;
-//GtkWidget *histogram_drawarea;
+GtkWidget *histogram_drawarea;
 GtkTreeStore *sidebar_TreeStore;
 
 // Application-local stuff
@@ -212,7 +212,7 @@ Plugin *ps_active_draw_tool;
 GuiViewportType te_DisplayType = VIEWPORT_TYPE_UNDEFINED;
 
 Configuration *config;
-//Histogram *histogram;
+Histogram *histogram;
 
 /******************************************************************************
  * FUNCTION IMPLEMENTATIONS
@@ -706,13 +706,12 @@ gui_mainwindow_file_load (void* data)
 
       gui_mainwindow_views_activate (views_combo, (void *)te_DisplayType);
       gtk_tree_view_expand_all(GTK_TREE_VIEW(treeview));
-      /*
+
       if (histogram == NULL)
 	histogram = histogram_new ();
 
       histogram_set_serie (histogram, ps_serie);
       gtk_widget_queue_draw (histogram_drawarea);
-      */
     }
   }
 }
@@ -1791,15 +1790,13 @@ gui_mainwindow_toolbar_new ()
   return hbox_toolbar;
 }
 
-/*
 gboolean
 gui_mainwindow_histogram_draw (UNUSED GtkWidget *widget, cairo_t *cr)
 {
   if (histogram == NULL) return FALSE;
-  histogram_draw (histogram, cr, 200, 300, 0, 0);
+  histogram_draw (histogram, cr, 300, 300, 0, 0);
   return TRUE;
 }
-*/
 
 
 void
@@ -2540,8 +2537,15 @@ gui_mainwindow_sidebar_new ()
 
   GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
 
+  histogram_drawarea = gtk_drawing_area_new ();
+  gtk_widget_set_size_request (histogram_drawarea, 300, 300);
+  
   gtk_box_pack_start (GTK_BOX (wrapper), scrolled, TRUE, TRUE, 0);
   gtk_box_pack_end (GTK_BOX (wrapper), propertiesBox, FALSE, FALSE, 0);
+  gtk_box_pack_end (GTK_BOX (wrapper), histogram_drawarea, FALSE, FALSE, 0);
+
+  g_signal_connect (histogram_drawarea, "draw",
+		    G_CALLBACK (gui_mainwindow_histogram_draw), NULL);
 
   /*--------------------------------------------------------------------------.
    | GLOBAL TREE VIEW SETTINGS                                                |

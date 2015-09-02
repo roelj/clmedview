@@ -71,43 +71,94 @@ histogram_set_serie (Histogram *histogram, Serie *serie)
   histogram->title = strcpy (histogram->title, serie->name);
 }
 
+static void
+plot_background_draw (cairo_t *cr, int width, int height, int x, int y, int padding)
+{
+  if (cr == NULL) return;
+
+  /*--------------------------------------------------------------------------.
+   | DRAW BACKGROUND                                                          |
+   '--------------------------------------------------------------------------*/
+  cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 1.0);
+  cairo_rectangle (cr, x, y, width, height);
+  cairo_fill (cr);
+
+  cairo_rectangle (cr,
+		   x + padding + 10,
+		   y + padding + 10,
+		   x + width - 20 - padding * 2,
+		   y + height - 20 - padding * 2);
+
+  cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 1.0);
+  cairo_fill (cr);
+
+  /*--------------------------------------------------------------------------.
+   | DRAW MARKERS                                                             |
+   '--------------------------------------------------------------------------*/
+  cairo_set_line_width (cr, 1);
+
+  /* NOTE: In the cairo_move_to() and cairo_line_to() functions I added 0.5 
+   * everywhere so the pixels will get rendered as sharp flat lines instead of
+   * fat blurry ones. */
+  
+  /* Draw row stripes. */
+  float row;
+  float num_rows = 10;
+  float row_height = (height - 20 - padding * 2) / (num_rows - 1);
+  for (row = 0; row < num_rows; row++)
+  {
+    cairo_set_source_rgba (cr, 0, 0, 0, 1);
+    cairo_set_line_width (cr, 1);
+
+    cairo_move_to (cr, padding + 0.5, row * row_height + padding + 10 + 0.5);
+    cairo_line_to (cr, padding + 10 + 0.5, row * row_height + padding + 10 + 0.5);
+    cairo_stroke (cr);
+
+    if (row != num_rows - 1)
+      cairo_set_source_rgba (cr, 0, 0, 0, 0.10);
+    else
+      cairo_set_line_width (cr, 2.5);
+
+    
+    cairo_move_to (cr, padding + 10 + 0.5, row * row_height + padding + 10 + 0.5);
+    cairo_line_to (cr, width - 10 - padding + 0.5, row * row_height + padding + 10 + 0.5);
+    cairo_stroke (cr);
+  }
+
+  /* Draw column stripes. */
+  float column;
+  float num_columns = 10;
+  float column_width = (width - 20 - padding * 2) / (num_columns - 1);
+  for (column = 0; column < num_columns; column++)
+  {
+    cairo_set_source_rgba (cr, 0, 0, 0, 1);
+    cairo_set_line_width (cr, 1);
+
+    cairo_move_to (cr, column * column_width + padding + 10 + 0.5, height - padding + 0.5);
+    cairo_line_to (cr, column * column_width + padding + 10 + 0.5, height - padding - 10 + 0.5);
+    cairo_stroke (cr);
+
+    if (column != 0)
+      cairo_set_source_rgba (cr, 0, 0, 0, 0.10);
+    else
+      cairo_set_line_width (cr, 2.5);
+
+
+    cairo_move_to (cr, column * column_width + padding + 10 + 0.5, height - padding - 10 + 0.5);
+    cairo_line_to (cr, column * column_width + padding + 10 + 0.5, padding + 10 + 0.5);
+    cairo_stroke (cr);
+  }
+}
+
 void
 histogram_draw (Histogram *histogram, cairo_t *cr, int width, int height, int x, int y)
 {
   if (histogram == NULL || cr == NULL) return;
 
-  const int padding = 10;
-
   /*--------------------------------------------------------------------------.
    | DRAW BACKGROUND                                                          |
    '--------------------------------------------------------------------------*/
-  cairo_rectangle (cr,
-		   x + padding,
-		   y + padding,
-		   x + width - padding * 2,
-		   height - padding * 2);
-
-  cairo_set_source_rgba (cr, 0.97, 0.97, 0.97, 1);
-  cairo_fill (cr);
-
-  cairo_stroke (cr);
-
-  /*--------------------------------------------------------------------------.
-   | DRAW MARKERS                                                             |
-   '--------------------------------------------------------------------------*/
-  cairo_set_source_rgba (cr, 0, 0, 0, 1);
-  cairo_set_line_width (cr, 1);
-
-  unsigned int rows;
-  unsigned int num_rows = 10;
-  unsigned int row_height = height / num_rows;
-  for (rows = 0; rows < num_rows; rows++)
-  {
-    cairo_move_to (cr, 0 + padding, rows * row_height + padding);
-    cairo_line_to (cr, 10 + padding, rows * row_height + padding);
-  }
-
-  cairo_stroke (cr);
+  plot_background_draw (cr, width, height, x, y, 10);
 
   /*--------------------------------------------------------------------------.
    | DRAW DATA                                                                |
